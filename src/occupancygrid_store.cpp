@@ -17,10 +17,19 @@ double theta = 0.0;
 double delta_x = 0.0;
 double delta_y = 0.0;
 
-bool cell_is_inside(nav_msgs::OccupancyGrid grid, double x, double y)
+bool cell_is_inside_meter(nav_msgs::OccupancyGrid grid, double x, double y)
 {
 	if(fabs(x)>grid.info.width*grid.info.resolution/2.0)	return false;
 	if(fabs(y)>grid.info.height*grid.info.resolution/2.0)	return false;
+	return true;
+}
+
+bool cell_is_inside(nav_msgs::OccupancyGrid grid, int x, int y)
+{   
+	if(x<-grid.info.width/2.0)  return false;
+	if(x>grid.info.width/2.0-1) return false;
+	if(y<-grid.info.width/2.0)  return false;
+	if(y>grid.info.width/2.0-1) return false;
 	return true;
 }
 
@@ -41,25 +50,46 @@ int point_to_index(nav_msgs::OccupancyGrid grid, int x, int y)
 	return	y_*grid.info.width + x_;
 }
 
-void filter(nav_msgs::OccupancyGrid grid)
+// void filter(nav_msgs::OccupancyGrid grid)
+// {
+// 	const int range = 2;
+// 	for(int i=0;i<grid.info.width*grid.info.height;i++){
+// 		if(grid.data[i]==-1){
+// 			// std::cout << "-----" << std::endl;
+// 			int x, y;
+// 			index_to_point(grid_store, i, x, y);
+// 			int count_roadcell = 0;
+// 			for(int j=-range;j<=range;j++){
+// 				for(int k=-range;k<=range;k++){
+// 					if(!cell_is_inside(grid_store, point_to_index(grid_store, x+j, y+k)))	break;
+// 					if(grid.data[point_to_index(grid_store, x+j, x+k)]==0)	count_roadcell++;
+// 				}
+// 			}
+// 			if(count_roadcell>(2*range+1)*(2*range+1)-1){
+// 				// std::cout << "Grid is updated" << std::endl;
+// 				grid.data[i] = 0;
+// 			}
+// 		}
+// 	}
+// }
+
+void ambiguity_filter(nav_msgs::OccupancyGrid grid)	//for ambiguity of intensity
 {
-	const int range = 2;
-	for(int i=0;i<grid.info.width*grid.info.height;i++){
-		if(grid.data[i]==-1){
-			// std::cout << "-----" << std::endl;
+	const int range = 3;
+	for(size_t i=0;i<grid.data.size();i++){
+		if(grid.data[i]==50){
 			int x, y;
-			index_to_point(grid_store, i, x, y);
-			int count_roadcell = 0;
+			index_to_point(grid, i, x, y);
+			int count_zerocell = 0; 
 			for(int j=-range;j<=range;j++){
 				for(int k=-range;k<=range;k++){
-					if(!cell_is_inside(grid_store, point_to_index(grid_store, x+j, y+k)))	break;
-					if(grid.data[point_to_index(grid_store, x+j, x+k)]==0)	count_roadcell++;
+					if(cell_is_inside(grid, x+j, y+k) && grid.data[point_to_index(grid, x+j, y+k)]==0)	count_zerocell++;
 				}
 			}
-			if(count_roadcell>(2*range+1)*(2*range+1)-1){
-				// std::cout << "Grid is updated" << std::endl;
-				grid.data[i] = 0;
-			}
+			int num_cells = (2*range + 1) + (2*range + 1);
+			const double ratio = 0.7;
+			int threshold = num_cells*ratio;
+			if(count_zerocell>threshold)	grid.data[i] = 0;
 		}
 	}
 }
@@ -110,7 +140,7 @@ void move_cells(double dt)
 			// std::cout << "y = " << y << std::endl;
 			int index_moved = meterpoint_to_index(grid_store, x, y);
 			// std::cout << "index_moved = " << index_moved << std::endl;
-			if(cell_is_inside(grid_store, x, y))	tmp_grid.data[index_moved] = grid_store.data[i];
+			if(cell_is_inside_meter(grid_store, x, y))	tmp_grid.data[index_moved] = grid_store.data[i];
 		}
 		delta_x -= delta_x_*grid_store.info.resolution;
 		delta_y -= delta_y_*grid_store.info.resolution;
@@ -178,7 +208,10 @@ int main(int argc, char** argv)
 	while(ros::ok()){
 		ros::spinOnce();
 		
-		if(!grid_store.data.empty())	pub_grid.publish(grid_store);
+		if(!grid_store.data.empty()){
+			ambiguity_filter(grid_store);
+			pub_grid.publish(grid_store);
+		}
 		
 		loop_rate.sleep();
 	}

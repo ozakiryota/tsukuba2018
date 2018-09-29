@@ -56,8 +56,7 @@ void filter(void)
 			int count_roadcell = 0;
 			for(int j=-range;j<=range;j++){
 				for(int k=-range;k<=range;k++){
-					if(!cell_is_inside(x+j, y+k))	break;
-					if(grid.data[point_to_index(x+j, y+k)]==0)	count_roadcell++;
+					if(cell_is_inside(x+j, y+k) && grid.data[point_to_index(x+j, y+k)]==0)	count_roadcell++;
 				}
 			}
 			if(count_roadcell>(2*range+1)*(2*range+1)-1){
