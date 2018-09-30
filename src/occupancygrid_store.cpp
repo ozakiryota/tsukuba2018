@@ -26,10 +26,14 @@ bool cell_is_inside_meter(nav_msgs::OccupancyGrid grid, double x, double y)
 
 bool cell_is_inside(nav_msgs::OccupancyGrid grid, int x, int y)
 {   
-	if(x<-grid.info.width/2.0)  return false;
-	if(x>grid.info.width/2.0-1) return false;
-	if(y<-grid.info.width/2.0)  return false;
-	if(y>grid.info.width/2.0-1) return false;
+	// std::cout << "CELL IS INSIDE" << std::endl;
+	
+	int w = grid.info.width;
+	int h = grid.info.height;
+	if(x<-w/2.0)  return false;
+	if(x>w/2.0-1) return false;
+	if(y<-h/2.0)  return false;
+	if(y>h/2.0-1) return false;
 	return true;
 }
 
@@ -73,10 +77,13 @@ int point_to_index(nav_msgs::OccupancyGrid grid, int x, int y)
 // 	}
 // }
 
-void ambiguity_filter(nav_msgs::OccupancyGrid grid)	//for ambiguity of intensity
+void ambiguity_filter(nav_msgs::OccupancyGrid& grid)	//for ambiguity of intensity
 {
+	// std::cout << "AMBIGUITY FILTER" << std::endl;
+	
 	const int range = 3;
 	for(size_t i=0;i<grid.data.size();i++){
+		// if(grid.data[i]==50){
 		if(grid.data[i]==50){
 			int x, y;
 			index_to_point(grid, i, x, y);
@@ -86,10 +93,11 @@ void ambiguity_filter(nav_msgs::OccupancyGrid grid)	//for ambiguity of intensity
 					if(cell_is_inside(grid, x+j, y+k) && grid.data[point_to_index(grid, x+j, y+k)]==0)	count_zerocell++;
 				}
 			}
-			int num_cells = (2*range + 1) + (2*range + 1);
+			int num_cells = (2*range + 1)*(2*range + 1);
 			const double ratio = 0.7;
-			int threshold = num_cells*ratio;
+			double threshold = num_cells*ratio;
 			if(count_zerocell>threshold)	grid.data[i] = 0;
+			// if(count_zerocell>0)	std::cout << "count_zerocell = " << count_zerocell << std::endl;
 		}
 	}
 }
@@ -176,7 +184,9 @@ void callback_grid(const nav_msgs::OccupancyGridConstPtr& msg)
 	grid_now = *msg;
 	if(grid_store.data.empty())	grid_store = *msg;
 
+	// ambiguity_filter(grid_now);
 	grid_update();
+	ambiguity_filter(grid_store);
 
 	/*for test*/
 	// bool zero = true;
@@ -209,7 +219,7 @@ int main(int argc, char** argv)
 		ros::spinOnce();
 		
 		if(!grid_store.data.empty()){
-			ambiguity_filter(grid_store);
+			// ambiguity_filter(grid_store);
 			pub_grid.publish(grid_store);
 		}
 		

@@ -20,10 +20,12 @@ nav_msgs::OccupancyGrid grid;
 
 bool cell_is_inside(int x, int y)
 {
-	if(x<-grid.info.width/2.0)	return false;
-	if(x>grid.info.width/2.0-1)	return false;
-	if(y<-grid.info.width/2.0)	return false;
-	if(y>grid.info.width/2.0-1)	return false;
+	int w = grid.info.width;
+	int h = grid.info.height;
+	if(x<-w/2.0)  return false; 
+	if(x>w/2.0-1) return false;
+	if(y<-h/2.0)  return false;
+	if(y>h/2.0-1) return false;
 	return true;
 }
 
@@ -165,7 +167,7 @@ void callback_cloud(const sensor_msgs::PointCloud2ConstPtr& msg)
 	cloud_extraction();
 	normal_estimation();
 	input_grid();
-	filter();
+	// filter();
 }
 
 void grid_initialization(void)
