@@ -17,6 +17,8 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>)
 pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_obstacles (new pcl::PointCloud<pcl::PointXYZI>);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_ground (new pcl::PointCloud<pcl::PointXYZINormal>);
 nav_msgs::OccupancyGrid grid;
+const double w = 10.0;	//x[m]
+const double h = 10.0;	//y[m]
 
 bool cell_is_inside(int x, int y)
 {
@@ -114,11 +116,10 @@ bool point_is_obstacle(pcl::PointXYZI p)
 {
 	const double height_min = -1.24;
 	const double height_max = 0.0;
-	const double range = 5.0;
 	if(p.z<height_min)	return false;
 	if(p.z>height_max)	return false;
-	if(fabs(p.x)>range)	return false;
-	if(fabs(p.y)>range)	return false;
+	if(fabs(p.x)>w/2.0)	return false;
+	if(fabs(p.y)>h/2.0)	return false;
 	return true;
 }
 
@@ -126,11 +127,10 @@ bool point_is_ground(pcl::PointXYZI p)
 {
 	const double height_min = -2.0;
 	const double height_max = -1.24;
-	const double range = 5.0;
 	if(p.z<height_min)	return false;
 	if(p.z>height_max)	return false;
-	if(fabs(p.x)>range)	return false;
-	if(fabs(p.y)>range)	return false;
+	if(fabs(p.x)>w/2.0)	return false;
+	if(fabs(p.y)>h/2.0)	return false;
 	return true;
 }
 
@@ -172,9 +172,6 @@ void callback_cloud(const sensor_msgs::PointCloud2ConstPtr& msg)
 
 void grid_initialization(void)
 {
-	const double w = 10.0;	//x[m]
-	const double h = 10.0;	//y[m]
-
 	// grid.header.frame_id = "/localmap";
 	// grid.header.frame_id = "/velodyne";
 	grid.info.resolution = 0.1;

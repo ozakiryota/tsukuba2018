@@ -7,7 +7,8 @@
 #include <nav_msgs/Odometry.h>
 
 /*global variables*/
-nav_msgs::OccupancyGrid grid_now;
+nav_msgs::OccupancyGrid grid_lidar;
+nav_msgs::OccupancyGrid grid_zed;
 nav_msgs::OccupancyGrid grid_store;
 nav_msgs::Odometry odom;
 ros::Time time_odom_now;
@@ -83,8 +84,8 @@ void ambiguity_filter(nav_msgs::OccupancyGrid& grid)	//for ambiguity of intensit
 	
 	const int range = 3;
 	for(size_t i=0;i<grid.data.size();i++){
-		// if(grid.data[i]==50){
 		if(grid.data[i]==50){
+		// if(grid.data[i]>0 && grid.data[i]<100){
 			int x, y;
 			index_to_point(grid, i, x, y);
 			int count_zerocell = 0; 
@@ -170,31 +171,44 @@ void callback_odom(const nav_msgs::OdometryConstPtr& msg)
 	first_callback_odom = false;
 }
 
-void grid_update(void)
+void grid_update_lidar(void)
 {
 	for(size_t i=0;i<grid_store.data.size();i++){
-		if(grid_now.data[i]!=-1)	grid_store.data[i] = grid_now.data[i];
+		if(grid_lidar.data[i]!=-1)	grid_store.data[i] = grid_lidar.data[i];
 	}
 }
 
-void callback_grid(const nav_msgs::OccupancyGridConstPtr& msg)
+void grid_update_zed(void)
+{
+	for(size_t i=0;i<grid_store.data.size();i++){
+		if(grid_store.data[i]==-1)	grid_store.data[i] = grid_zed.data[i];
+		else if(grid_store.data[i]==50 && grid_zed.data[i]==0)	grid_store.data[i] = 25;
+		else if(grid_store.data[i]==0 && grid_zed.data[i]==50)	grid_store.data[i] = 25;
+	}
+}
+
+void callback_grid_lidar(const nav_msgs::OccupancyGridConstPtr& msg)
 {
 	// std::cout << "- CALLBACK GRID -" << std::endl;
 	
-	grid_now = *msg;
+	grid_lidar = *msg;
 	if(grid_store.data.empty())	grid_store = *msg;
 
 	// ambiguity_filter(grid_now);
-	grid_update();
+	grid_update_lidar();
 	ambiguity_filter(grid_store);
+}
 
-	/*for test*/
-	// bool zero = true;
-	// for(size_t i=0;i<grid_store.data.size();i++)	if(grid_store.data[i]!=-1)	zero = false;
-	// if(zero){
-	// 	std::cout << "reflesh" << std::endl;
-	// 	grid_store = *msg;
-	// }
+void callback_grid_zed(const nav_msgs::OccupancyGridConstPtr& msg)
+{
+	// std::cout << "- CALLBACK GRID -" << std::endl;
+	
+	grid_zed = *msg;
+	if(grid_store.data.empty())	grid_store = *msg;
+
+	// ambiguity_filter(grid_now);
+	grid_update_zed();
+	ambiguity_filter(grid_store);
 }
 
 int main(int argc, char** argv)
@@ -203,7 +217,8 @@ int main(int argc, char** argv)
 	ros::NodeHandle nh;
 
 	/*sub*/
-	ros::Subscriber sub_grid = nh.subscribe("/occupancygrid/lidar", 1, callback_grid);
+	ros::Subscriber sub_grid_lidar = nh.subscribe("/occupancygrid/lidar", 1, callback_grid_lidar);
+	ros::Subscriber sub_grid_zed = nh.subscribe("/occupancygrid/zed", 1, callback_grid_zed);
 	ros::Subscriber sub_odom = nh.subscribe("/tinypower/odom", 1, callback_odom);
 	
 	/*pub*/
