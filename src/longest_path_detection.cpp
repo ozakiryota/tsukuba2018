@@ -68,7 +68,7 @@ void LongPathDetection::detection_main(void)
 
 	double longest_path_length = 0.0;
 	double longest_path_length_angle = 0.0;
-	for(double step=0.0;step<=180.0;step+=angle_step){
+	for(double step=0.0;step<=150.0;step+=angle_step){
 		double path_length = 0.0;
 		double theta = yaw + step/180.0*M_PI;
 		if(theta>M_PI)	theta -= 2.0*M_PI;
