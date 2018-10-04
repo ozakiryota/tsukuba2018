@@ -13,4 +13,5 @@
 
 	<node pkg="tsukuba2018" type="occupancygrid_lidar" name="occupancygrid_lidar" output="screen"/>
 	<node pkg="tsukuba2018" type="occupancygrid_store" name="occupancygrid_store" output="screen"/>
+	<node pkg="tsukuba2018" type="longest_path_detection" name="longest_path_detection" output="screen"/>
 </launch>

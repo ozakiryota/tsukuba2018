@@ -84,8 +84,8 @@ void ambiguity_filter(nav_msgs::OccupancyGrid& grid)	//for ambiguity of intensit
 	
 	const int range = 3;
 	for(size_t i=0;i<grid.data.size();i++){
-		if(grid.data[i]==50){
-		// if(grid.data[i]>0 && grid.data[i]<100){
+		// if(grid.data[i]==50){
+		if(grid.data[i]>0 && grid.data[i]<100){
 			int x, y;
 			index_to_point(grid, i, x, y);
 			int count_zerocell = 0; 

@@ -15,8 +15,8 @@
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_grass (new pcl::PointCloud<pcl::PointXYZ>);
 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_road (new pcl::PointCloud<pcl::PointXYZ>);
 nav_msgs::OccupancyGrid grid;
-const double w = 10.0;	//x[m]
-const double h = 10.0;	//y[m]
+const double w = 11.0;	//x[m]
+const double h = 11.0;	//y[m]
 
 bool cell_is_inside(int x, int y)
 {

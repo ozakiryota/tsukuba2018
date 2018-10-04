@@ -17,8 +17,9 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZI>)
 pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_obstacles (new pcl::PointCloud<pcl::PointXYZI>);
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_ground (new pcl::PointCloud<pcl::PointXYZINormal>);
 nav_msgs::OccupancyGrid grid;
-const double w = 10.0;	//x[m]
-const double h = 10.0;	//y[m]
+const double w = 11.0;	//x[m]
+const double h = 11.0;	//y[m]
+// std::vector<double> fitting_errors;
 
 bool cell_is_inside(int x, int y)
 {
@@ -83,24 +84,78 @@ void input_grid(void)
 {
 	// std::cout << "- INPUT GRID -" << std::endl;
 	grid.header.frame_id = cloud->header.frame_id;
-	const double shreshold_intensity = 20;
-	const double shreshold_curvature = 1.0e-4;
+	const double threshold_intensity = 20;
+	const double threshold_curvature = 1.0e-4;
+	const double threshold_fitting_error = 1.0e-10;
 
 
 	for(int i=0;i<grid.info.width*grid.info.height;i++)		grid.data[i] = -1;
 
 	for(size_t i=0;i<cloud_ground->points.size();i++){
-		if(cloud_ground->points[i].intensity<shreshold_intensity)	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 0;
+		/*intensity*/
+		if(cloud_ground->points[i].intensity<threshold_intensity)	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 0;
 		else	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 50;
-		// if(cloud_ground->points[i].curvature<shreshold_curvature)	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 0;
 		
-		// std::cout << "cloud_ground " << i << ":" << cloud_ground->points[i] << std::endl;
+		/*curvature*/
+		// if(cloud_ground->points[i].curvature<threshold_curvature)	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 0;
+		// else	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 50;
+		// std::cout << "cloud_ground->points[i].curvature = " << cloud_ground->points[i].curvature << std::endl;
+		
+		/*fitting_error*/
+	// 	if(fitting_errors[i]<threshold_fitting_error)	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 0;
+	// 	else	grid.data[meterpoint_to_index(cloud_ground->points[i].x, cloud_ground->points[i].y)] = 50;
 	}
 	for(size_t i=0;i<cloud_obstacles->points.size();i++){
 		grid.data[meterpoint_to_index(cloud_obstacles->points[i].x, cloud_obstacles->points[i].y)] = 100;
 		// std::cout << "cloud_obstacles " << i << ":" << cloud_obstacles->points[i] << std::endl;
 	}
 }
+
+// double compute_fitting_error(Eigen::Vector4f plane_parameters, pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud, std::vector<int> indices)
+// {
+// 	float sum_square_error = 0.0;
+// 	for(int i=0;i<indices.size();i++){
+// 		float square_error =	(plane_parameters[0]*cloud->points[indices[i]].x
+// 								+plane_parameters[1]*cloud->points[indices[i]].y
+// 								+plane_parameters[2]*cloud->points[indices[i]].z
+// 								+plane_parameters[3])
+// 								*(plane_parameters[0]*cloud->points[indices[i]].x
+// 								+plane_parameters[1]*cloud->points[indices[i]].y
+// 								+plane_parameters[2]*cloud->points[indices[i]].z
+// 								+plane_parameters[3])
+// 								/(plane_parameters[0]*plane_parameters[0]
+// 								+plane_parameters[1]*plane_parameters[1]
+// 								+plane_parameters[2]*plane_parameters[2]);
+// 		sum_square_error += square_error/(float)indices.size();
+// 	}
+// 	return sum_square_error;
+// }
+//
+// std::vector<int> kdtree_search(pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud, pcl::PointXYZINormal searchpoint, double search_radius)
+// {
+// 	pcl::KdTreeFLANN<pcl::PointXYZINormal> kdtree;
+// 	kdtree.setInputCloud(cloud);
+// 	std::vector<int> pointIdxRadiusSearch;
+// 	std::vector<float> pointRadiusSquaredDistance;
+// 	if(kdtree.radiusSearch(searchpoint, search_radius, pointIdxRadiusSearch, pointRadiusSquaredDistance)<=0)	std::cout << "kdtree error" << std::endl;
+// 	return pointIdxRadiusSearch; 
+// }
+//
+// void normal_estimation_(void)
+// {
+// 	fitting_errors.clear();
+// 	for(size_t i=0;i<cloud_ground->points.size();i+=10){
+// 		const double search_radius = 0.1;
+// 		std::vector<int> indices = kdtree_search(cloud_ground, cloud_ground->points[i], search_radius);
+// 		// pcl::computePointNormal(*cloud_ground, indices, plane_parameters, curvature);
+// 		Eigen::Vector4f plane_parameters;
+// 		pcl::computePointNormal(*cloud_ground, indices, plane_parameters, cloud_ground->points[i].curvature);
+// 		cloud_ground->points[i].normal_x = plane_parameters[0];
+// 		cloud_ground->points[i].normal_y = plane_parameters[1];
+// 		cloud_ground->points[i].normal_z = plane_parameters[2];
+// 		fitting_errors.push_back( compute_fitting_error(plane_parameters, cloud_ground, indices) );
+// 	}
+// }
 
 void normal_estimation(void)
 {
@@ -166,6 +221,7 @@ void callback_cloud(const sensor_msgs::PointCloud2ConstPtr& msg)
 
 	cloud_extraction();
 	normal_estimation();
+	// normal_estimation_();
 	input_grid();
 	// filter();
 }
