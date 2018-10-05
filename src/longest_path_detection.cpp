@@ -61,6 +61,7 @@ void LongPathDetection::detection_main(void)
 	tf::Matrix3x3(transform.getRotation()).getRPY(roll, pitch, yaw);
 
 	const double angle_step = 10.0;	//[deg]
+	const double angle_range = 90.0;	//[deg]
 	double search_range = grid.info.width*grid.info.resolution/2.0;
 	if(search_range>grid.info.height*grid.info.resolution)	search_range = grid.info.height*grid.info.resolution;
 	search_range -= 1.0;
@@ -68,7 +69,7 @@ void LongPathDetection::detection_main(void)
 
 	double longest_path_length = 0.0;
 	double longest_path_length_angle = 0.0;
-	for(double step=0.0;step<=150.0;step+=angle_step){
+	for(double step=0.0;step<=angle_range;step+=angle_step){
 		double path_length = 0.0;
 		double theta = yaw + step/180.0*M_PI;
 		if(theta>M_PI)	theta -= 2.0*M_PI;
@@ -81,7 +82,7 @@ void LongPathDetection::detection_main(void)
 		}
 		if(reached_end)	break;
 
-		if(step!=0.0 && step!=180.0){
+		if(step!=0.0 && step!=angle_range){
 			path_length = 0.0;
 			theta = yaw - step/180.0*M_PI;
 			reached_end = radial_search(path_length, theta, search_range);
