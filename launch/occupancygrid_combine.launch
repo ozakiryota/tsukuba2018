@@ -28,4 +28,6 @@
 	<node pkg="tsukuba2018" type="occupancygrid_zed" name="occupancygrid_zed" output="screen"/>
 	
 	<node pkg="tsukuba2018" type="longest_psth_detection" name="longest_psth_detection" output="screen"/>
+
+	<node pkg="tsukuba2018" type="longest_path_detection" name="longest_path_detection" output="screen"/>
 </launch>
