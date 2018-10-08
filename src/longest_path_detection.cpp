@@ -82,7 +82,7 @@ void LongPathDetection::detection_main(void)
 		}
 		if(reached_end)	break;
 
-		if(step!=0.0 && step!=angle_range){
+		if(step!=0.0 && step!=180.0){
 			path_length = 0.0;
 			theta = yaw - step/180.0*M_PI;
 			reached_end = radial_search(path_length, theta, search_range);
