@@ -18,7 +18,6 @@ bool first_callback_grid = true;
 double theta = 0.0;
 double delta_x = 0.0;
 double delta_y = 0.0;
-bool robot_started_running = false;
 
 bool cell_is_inside_meter(nav_msgs::OccupancyGrid grid, double x, double y)
 {
@@ -168,10 +167,6 @@ void callback_odom(const nav_msgs::OdometryConstPtr& msg)
 	double dt = (time_odom_now - time_odom_last).toSec();
 	time_odom_last = time_odom_now;
 
-	if(!robot_started_running){
-		if(odom.twist.twist.linear.x>0.5)	robot_started_running = true;
-	}
-
 	if(!first_callback_odom && !grid_store.data.empty())	move_cells(dt);
 
 	first_callback_odom = false;
@@ -215,7 +210,7 @@ void callback_grid_lidar(const nav_msgs::OccupancyGridConstPtr& msg)
 	grid_update_lidar();
 	ambiguity_filter(grid_store);
 
-	if(first_callback_grid || !robot_started_running)	initialize_around_startpoint();
+	if(first_callback_grid)	initialize_around_startpoint();
 	first_callback_grid = false;
 }
 
@@ -229,6 +224,9 @@ void callback_grid_zed(const nav_msgs::OccupancyGridConstPtr& msg)
 	// ambiguity_filter(grid_now);
 	grid_update_zed();
 	ambiguity_filter(grid_store);
+	
+	if(first_callback_grid)	initialize_around_startpoint();
+	first_callback_grid = false;
 }
 
 int main(int argc, char** argv)
@@ -242,7 +240,6 @@ int main(int argc, char** argv)
 	ros::Subscriber sub_odom = nh.subscribe("/tinypower/odom", 1, callback_odom);
 	
 	/*pub*/
-	// ros::Publisher pub_grid = nh.advertise<nav_msgs::OccupancyGrid>("/local_map",1);
 	ros::Publisher pub_grid = nh.advertise<nav_msgs::OccupancyGrid>("/occupancygrid/store",1);
 	
 	/*variables*/
